@@ -545,7 +545,7 @@ class MVCTestCase(BaseMVCTestCase):
         """
             Test views creation and registration
         """
-        self.assertEqual(len(self.appbuilder.baseviews), 36)
+        self.assertEqual(len(self.appbuilder.baseviews), 38)
 
     def test_back(self):
         """
@@ -678,6 +678,24 @@ class MVCTestCase(BaseMVCTestCase):
             follow_redirects=True,
         )
         self.assertEqual(rv.status_code, 200)
+
+    def test_sec_reset_password_email_prot(self):
+        """
+	    Test Security reset password while a valid reset_hash with Email ack is required
+	    (EMAIL_PROT = True)
+        """
+        client = self.app.test_client()
+
+        # turn password reset with hash function on
+        self.app.config.setdefault("EMAIL_PROT", True)
+
+        # Try Reset My password while logged in, without a reset_hash with Email ack
+        rv = self.browser_login(client, USERNAME_ADMIN, PASSWORD_ADMIN)
+        rv = client.get("/users/action/resetmypassword/1", follow_redirects=True)
+        data = rv.data.decode("utf-8")
+        self.assertIn("Reset Password Form", data)
+        self.assertEqual(rv.status_code, 401)
+        self.browser_logout(client)
 
     def test_generic_interface(self):
         """
@@ -1670,3 +1688,40 @@ class MVCTestCase(BaseMVCTestCase):
         self.assertEqual(state_transitions, target_state_transitions)
         role = self.appbuilder.sm.find_role("Test")
         self.assertEqual(len(role.permissions), 1)
+
+
+class ResetHashMVCTestCase(BaseMVCTestCase):
+    """
+	Tests for Security reset password while a valid reset_hash with Email ack is required
+	(EMAIL_PROT = True)
+    """
+
+    def setUp(self):
+        super().setUp()
+        sess = PSSession()
+
+        # turn password reset with hash function on
+        self.app.config["EMAIL_PROT"] = True
+        db = SQLA(self.app)
+        AppBuilder(self.app, db.session)
+
+    def tearDown(self):
+        self.appbuilder = None
+        self.app = None
+        self.db = None
+        log.debug("TEAR DOWN")
+
+    def test_sec_reset_password_email_prot(self):
+        """
+        Test Security reset password while a valid reset_hash with Email ack is required
+        (EMAIL_PROT = True)
+        """
+        client = self.app.test_client()
+
+        # Try Reset My password while logged in, without a reset_hash with Email ack
+        rv = self.browser_login(client, USERNAME_ADMIN, PASSWORD_ADMIN)
+        rv = client.get("/users/action/resetmypassword/1", follow_redirects=True)
+        data = rv.data.decode("utf-8")
+        self.assertIn("Reset Password Form", data)
+        self.assertEqual(rv.status_code, 401)
+        self.browser_logout(client)

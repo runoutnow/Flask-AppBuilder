@@ -89,8 +89,10 @@ class ResetMyPasswordView(SimpleFormView):
     form_title = lazy_gettext("Reset Password Form")
     redirect_url = "/"
     message = lazy_gettext("Password Changed")
-    forbidden_msg = lazy_gettext("You have to confirm the " +
-      "\"Reset your password\" Email in order to change the password")
+    forbidden_msg = lazy_gettext(
+        "You have to confirm the "
+        + "Reset your password email in order to change the password"
+    )
 
     def form_get(self, form):
         if current_app.config['EMAIL_PROT']:
